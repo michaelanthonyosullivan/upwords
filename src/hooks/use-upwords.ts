@@ -38,7 +38,7 @@ export function useUpwords() {
 
   const bestMoveRef = useRef<CandidateMove | null>(null);
   const allMovesRef = useRef<CandidateMove[]>([]);
-  const showCoachRef = useRef<boolean>(true);
+  const [coachEnabled, setCoachEnabled] = useState<boolean>(true);
 
   useEffect(() => {
     loadDictionary((p) => {
@@ -74,7 +74,7 @@ export function useUpwords() {
     numAi: number = 3,
     showCoach: boolean = true
   ) => {
-    showCoachRef.current = showCoach;
+    setCoachEnabled(showCoach);
     const bag = generateShuffledBag();
     const count = Math.max(1, Math.min(3, numAi));
     const newPlayers: Player[] = [
@@ -194,7 +194,7 @@ export function useUpwords() {
     setActiveRack(nextRack);
     setHint(null);
 
-    if (showCoachRef.current) {
+    if (coachEnabled) {
       setCoachAnalysis({
         userPlay: { placements, score: result.score!, word: allWords[0] || '' },
         bestPlay: bestMoveRef.current
@@ -389,6 +389,7 @@ export function useUpwords() {
     board, players, tileBag, currentTurn, history, gameEnded, winnerId,
     dictLoaded, dictLoadingProgress, gameStarted, isAiThinking,
     placements, activeRack, hint, coachAnalysis, lastPlayPlacements,
+    coachEnabled, setCoachEnabled,
     startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack,
     submitPlay, passTurn, exchangeTiles, getHint, clearHint,
     closeCoachAndAdvance, getPlacementsPreview, isFirstMoveOfGame

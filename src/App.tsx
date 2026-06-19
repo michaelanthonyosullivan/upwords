@@ -16,6 +16,7 @@ export default function App() {
     board, players, tileBag, currentTurn, history, gameEnded, winnerId,
     dictLoaded, dictLoadingProgress, gameStarted, isAiThinking,
     placements, activeRack, hint, coachAnalysis, lastPlayPlacements,
+    coachEnabled, setCoachEnabled,
     startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack,
     submitPlay, passTurn, exchangeTiles, getHint, clearHint,
     closeCoachAndAdvance, getPlacementsPreview
@@ -125,6 +126,8 @@ export default function App() {
               onCloseAnalysis={closeCoachAndAdvance}
               onShowBestMovePreview={setBestMovePreview}
               hasPlacements={placements.length > 0}
+              coachEnabled={coachEnabled}
+              onToggleCoach={setCoachEnabled}
             />
             <MoveLog history={history} players={players} />
           </div>

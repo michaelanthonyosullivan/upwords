@@ -11,8 +11,10 @@ export function MoveLog({ history, players }: MoveLogProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (containerRef.current) containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    if (containerRef.current) containerRef.current.scrollTop = 0;
   }, [history]);
+
+  const orderedHistory = [...history].reverse();
 
   return (
     <div className="w-full glass-card p-5 rounded-2xl border border-white/5 flex flex-col gap-3 flex-1 min-h-[200px]">
@@ -26,7 +28,7 @@ export function MoveLog({ history, players }: MoveLogProps) {
             No moves yet
           </div>
         ) : (
-          history.map((item, idx) => {
+          orderedHistory.map((item) => {
             const player = players.find(p => p.id === item.playerId);
             const isHuman = player ? !player.isAi : false;
 
@@ -49,7 +51,7 @@ export function MoveLog({ history, players }: MoveLogProps) {
             }
 
             return (
-              <div key={idx}
+              <div key={item.turnIndex}
                 className="flex items-center justify-between p-2.5 rounded-lg bg-slate-950/40 border border-white/5 text-xs animate-popup">
                 <div className="flex items-center gap-2 min-w-0">
                   <div className="shrink-0">{icon}</div>

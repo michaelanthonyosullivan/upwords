@@ -14,11 +14,14 @@ interface CoachPanelProps {
   onCloseAnalysis: () => void;
   onShowBestMovePreview: (move: CandidateMove | null) => void;
   hasPlacements: boolean;
+  coachEnabled: boolean;
+  onToggleCoach: (enabled: boolean) => void;
 }
 
 export function CoachPanel({
   onGetHint, onClearHint, activeHint, coachAnalysis,
-  onCloseAnalysis, onShowBestMovePreview, hasPlacements
+  onCloseAnalysis, onShowBestMovePreview, hasPlacements,
+  coachEnabled, onToggleCoach
 }: CoachPanelProps) {
   const [showingPreview, setShowingPreview] = useState(false);
 
@@ -35,28 +38,50 @@ export function CoachPanel({
     <div className="w-full flex flex-col gap-3">
       {/* Hint controls (hidden while coach modal is showing) */}
       {!coachAnalysis && (
-        <div className="w-full glass-card p-4 rounded-2xl border border-white/5 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
-              <HelpCircle className="h-5 w-5" />
+        <div className="w-full glass-card rounded-2xl border border-white/5 flex flex-col">
+          <div className="p-4 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="h-9 w-9 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+                <HelpCircle className="h-5 w-5" />
+              </div>
+              <div>
+                <h4 className="text-xs font-bold text-slate-200">Coach Assist</h4>
+                <p className="text-[10px] text-slate-500">Stuck? Get a suggested play.</p>
+              </div>
             </div>
-            <div>
-              <h4 className="text-xs font-bold text-slate-200">Coach Assist</h4>
-              <p className="text-[10px] text-slate-500">Stuck? Get a suggested play.</p>
-            </div>
+            {activeHint ? (
+              <button onClick={onClearHint}
+                className="px-3 py-1.5 border border-white/10 rounded-lg bg-slate-950/40 hover:bg-slate-950/80 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95">
+                Clear
+              </button>
+            ) : (
+              <button onClick={onGetHint} disabled={hasPlacements}
+                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg active:scale-95 transition-all text-xs disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 cursor-pointer">
+                <Sparkles className="h-3.5 w-3.5 fill-current" />
+                <span>Hint</span>
+              </button>
+            )}
           </div>
-          {activeHint ? (
-            <button onClick={onClearHint}
-              className="px-3 py-1.5 border border-white/10 rounded-lg bg-slate-950/40 hover:bg-slate-950/80 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95">
-              Clear
+
+          <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
+            <div>
+              <h5 className="text-[11px] font-bold text-slate-300">Post-Move Feedback</h5>
+              <p className="text-[9px] text-slate-500">Show analysis popup after your plays</p>
+            </div>
+            <button
+              onClick={() => onToggleCoach(!coachEnabled)}
+              role="switch"
+              aria-checked={coachEnabled}
+              title={coachEnabled ? 'Disable coach feedback' : 'Enable coach feedback'}
+              className={`relative w-9 h-5 rounded-full transition-colors duration-200 shrink-0 cursor-pointer ${
+                coachEnabled ? 'bg-red-600' : 'bg-slate-700'
+              }`}
+            >
+              <span className={`absolute top-0.5 left-0.5 h-4 w-4 rounded-full bg-white shadow-md transition-transform duration-200 ${
+                coachEnabled ? 'translate-x-4' : 'translate-x-0'
+              }`} />
             </button>
-          ) : (
-            <button onClick={onGetHint} disabled={hasPlacements}
-              className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg active:scale-95 transition-all text-xs disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 cursor-pointer">
-              <Sparkles className="h-3.5 w-3.5 fill-current" />
-              <span>Hint</span>
-            </button>
-          )}
+          </div>
         </div>
       )}
 
