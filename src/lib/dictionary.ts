@@ -34,6 +34,30 @@ let isLoading = false;
 let commonWordSet = new Set<string>();
 // fullWordSet kept for AI and Trie-based prefix lookups
 let fullWordSet = new Set<string>();
+// Words the player has manually "challenged" into the common list this browser
+let customWordSet = new Set<string>();
+
+const CUSTOM_WORDS_STORAGE_KEY = 'upwords_custom_words';
+
+function loadCustomWordsFromStorage() {
+  try {
+    const raw = localStorage.getItem(CUSTOM_WORDS_STORAGE_KEY);
+    if (raw) {
+      const arr = JSON.parse(raw) as string[];
+      customWordSet = new Set(arr.map(w => w.toUpperCase()));
+    }
+  } catch {
+    customWordSet = new Set();
+  }
+}
+
+function saveCustomWordsToStorage() {
+  try {
+    localStorage.setItem(CUSTOM_WORDS_STORAGE_KEY, JSON.stringify([...customWordSet]));
+  } catch {
+    // localStorage unavailable (e.g. private browsing) — custom words just won't persist
+  }
+}
 
 export async function loadDictionary(onProgress?: (progress: number) => void): Promise<Trie> {
   if (dictionaryInstance && isLoaded) return dictionaryInstance;
@@ -44,6 +68,7 @@ export async function loadDictionary(onProgress?: (progress: number) => void): P
   }
 
   isLoading = true;
+  loadCustomWordsFromStorage();
   try {
     // Load common words (curated everyday English – no proper nouns) in parallel with full dict
     const [dictResponse, commonResponse] = await Promise.all([
@@ -105,9 +130,10 @@ export async function loadDictionary(onProgress?: (progress: number) => void): P
   }
 }
 
-/** Validates a word for gameplay — uses the curated common-English set */
+/** Validates a word for gameplay — uses the curated common-English set plus any challenged words */
 export function isValidWord(word: string): boolean {
   const clean = word.trim().toUpperCase();
+  if (customWordSet.has(clean)) return true;
   // Primary: check curated common dictionary
   if (commonWordSet.size > 0) return commonWordSet.has(clean);
   // Fallback: full dictionary if common set somehow not loaded
@@ -116,6 +142,26 @@ export function isValidWord(word: string): boolean {
 
 export function isCommonWord(word: string): boolean {
   return commonWordSet.has(word.trim().toUpperCase());
+}
+
+/**
+ * "Challenge" a rejected word into the common dictionary. Only succeeds if the
+ * word is already in the full Scrabble-valid word list (fullWordSet) — this
+ * lets a player fix real everyday words that were wrongly excluded by the
+ * common-word curation (e.g. BICEP), without opening the door to adding
+ * made-up words that aren't valid in any dictionary at all.
+ */
+export function challengeWord(word: string): boolean {
+  const clean = word.trim().toUpperCase();
+  if (!fullWordSet.has(clean)) return false;
+  customWordSet.add(clean);
+  commonWordSet.add(clean);
+  saveCustomWordsToStorage();
+  return true;
+}
+
+export function getCustomWords(): string[] {
+  return [...customWordSet].sort();
 }
 
 export function getWordSet(): Set<string> { return fullWordSet; }

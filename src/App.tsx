@@ -8,7 +8,7 @@ import { Scoreboard } from './components/Scoreboard';
 import { TileBagInfo } from './components/TileBagInfo';
 import { MoveLog } from './components/MoveLog';
 import { CoachPanel } from './components/CoachPanel';
-import { Trophy, HelpCircle, Sparkles, RefreshCw } from 'lucide-react';
+import { Trophy, HelpCircle, Sparkles, RefreshCw, ShieldQuestion, CheckCircle2, XCircle } from 'lucide-react';
 import { CandidateMove } from './lib/upwords-ai';
 
 export default function App() {
@@ -18,13 +18,14 @@ export default function App() {
     placements, activeRack, hint, coachAnalysis, lastPlayPlacements,
     coachEnabled, setCoachEnabled,
     startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack,
-    submitPlay, passTurn, exchangeTiles, getHint, clearHint,
+    submitPlay, passTurn, exchangeTiles, getHint, clearHint, challengeWord,
     closeCoachAndAdvance, getPlacementsPreview
   } = useUpwords();
 
   // Index-based tile selection fixes the duplicate-letter bug
   const [selectedTile, setSelectedTile] = useState<{ letter: string; idx: number } | null>(null);
   const [bestMovePreview, setBestMovePreview] = useState<CandidateMove | null>(null);
+  const [challengeResult, setChallengeResult] = useState<{ word: string; success: boolean } | null>(null);
 
   const handleCellClick = (r: number, c: number) => {
     if (players[currentTurn]?.isAi || gameEnded) return;
@@ -50,6 +51,11 @@ export default function App() {
     }
   };
 
+  const handleChallenge = (word: string) => {
+    const success = challengeWord(word);
+    setChallengeResult({ word, success });
+  };
+
   const preview = getPlacementsPreview();
   const winner = gameEnded && winnerId !== null ? players.find(p => p.id === winnerId) : null;
 
@@ -67,7 +73,7 @@ export default function App() {
 
             {/* Live word validation preview */}
             {placements.length > 0 && preview && (
-              <div className={`px-4 py-2 rounded-xl text-xs font-bold shadow-md animate-popup border flex items-center gap-2 ${
+              <div className={`px-4 py-2 rounded-xl text-xs font-bold shadow-md animate-popup border flex flex-wrap items-center gap-2 ${
                 preview.isValid
                   ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
                   : 'bg-red-500/10 border-red-500/20 text-red-400'
@@ -83,6 +89,30 @@ export default function App() {
                   <>
                     <HelpCircle className="h-3.5 w-3.5" />
                     <span>{preview.error}</span>
+                    {preview.invalidWord && (
+                      challengeResult?.word === preview.invalidWord ? (
+                        challengeResult.success ? (
+                          <span className="flex items-center gap-1 text-emerald-400 font-normal">
+                            <CheckCircle2 className="h-3.5 w-3.5" />
+                            Added — try Submit again
+                          </span>
+                        ) : (
+                          <span className="flex items-center gap-1 text-slate-400 font-normal">
+                            <XCircle className="h-3.5 w-3.5" />
+                            Not a recognised word in any dictionary
+                          </span>
+                        )
+                      ) : (
+                        <button
+                          onClick={() => handleChallenge(preview.invalidWord!)}
+                          className="flex items-center gap-1 px-2 py-0.5 rounded-md border border-red-400/30 bg-red-500/10 hover:bg-red-500/20 text-red-300 font-semibold transition-all active:scale-95 cursor-pointer"
+                          title="Add this word to the dictionary if it's a real everyday word"
+                        >
+                          <ShieldQuestion className="h-3.5 w-3.5" />
+                          Challenge '{preview.invalidWord}'
+                        </button>
+                      )
+                    )}
                   </>
                 )}
               </div>

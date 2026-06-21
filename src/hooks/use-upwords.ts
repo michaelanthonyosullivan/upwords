@@ -5,7 +5,7 @@ import {
   BOARD_SIZE
 } from '../lib/upwords-engine';
 import { generateAllLegalMoves, getAiPlay, CandidateMove } from '../lib/upwords-ai';
-import { loadDictionary } from '../lib/dictionary';
+import { loadDictionary, challengeWord as challengeWordInDictionary } from '../lib/dictionary';
 
 const DEFAULT_AI_NAMES = ['Seamus', 'Clodagh', 'Dervla'];
 
@@ -28,6 +28,7 @@ export function useUpwords() {
   const [activeRack, setActiveRack] = useState<string[]>([]);
 
   const [hint, setHint] = useState<CandidateMove | null>(null);
+  const [customWordsVersion, setCustomWordsVersion] = useState(0);
   const [coachAnalysis, setCoachAnalysis] = useState<{
     userPlay: { placements: PlayPlacement[]; score: number; word: string } | null;
     bestPlay: CandidateMove | null;
@@ -385,13 +386,25 @@ export function useUpwords() {
     return validatePlay(board, placements, isFirstMoveOfGame(), players[currentTurn]?.rack || []);
   };
 
+  /**
+   * Player-facing "challenge" — lets them add a rejected word to the common
+   * dictionary, but only if it's already valid in the full Scrabble word
+   * list (prevents adding made-up words; only rescues real words that were
+   * wrongly excluded from the curated common-word list).
+   */
+  const challengeWord = (word: string): boolean => {
+    const success = challengeWordInDictionary(word);
+    if (success) setCustomWordsVersion(v => v + 1);
+    return success;
+  };
+
   return {
     board, players, tileBag, currentTurn, history, gameEnded, winnerId,
     dictLoaded, dictLoadingProgress, gameStarted, isAiThinking,
     placements, activeRack, hint, coachAnalysis, lastPlayPlacements,
-    coachEnabled, setCoachEnabled,
+    coachEnabled, setCoachEnabled, customWordsVersion,
     startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack,
-    submitPlay, passTurn, exchangeTiles, getHint, clearHint,
+    submitPlay, passTurn, exchangeTiles, getHint, clearHint, challengeWord,
     closeCoachAndAdvance, getPlacementsPreview, isFirstMoveOfGame
   };
 }

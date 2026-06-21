@@ -106,6 +106,7 @@ export function validatePlay(
   error?: string;
   wordsFormed?: WordFormed[];
   score?: number;
+  invalidWord?: string;
 } {
   if (placements.length === 0) return { isValid: false, error: 'No tiles placed.' };
 
@@ -228,7 +229,7 @@ export function validatePlay(
 
   for (const wf of wordsFormed) {
     if (!isValidWord(wf.word))
-      return { isValid: false, error: `'${wf.word}' is not a recognised word.` };
+      return { isValid: false, error: `'${wf.word}' is not a recognised word.`, invalidWord: wf.word };
   }
 
   return { isValid: true, wordsFormed, score: calculateScore(tempBoard, placements, wordsFormed) };
