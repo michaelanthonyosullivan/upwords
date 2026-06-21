@@ -6,6 +6,7 @@ import { PlayPlacement } from '../lib/upwords-engine';
 interface CoachPanelProps {
   onGetHint: () => void;
   onClearHint: () => void;
+  onAcceptHint: () => void;
   activeHint: CandidateMove | null;
   coachAnalysis: {
     userPlay: { placements: PlayPlacement[]; score: number; word: string } | null;
@@ -19,7 +20,7 @@ interface CoachPanelProps {
 }
 
 export function CoachPanel({
-  onGetHint, onClearHint, activeHint, coachAnalysis,
+  onGetHint, onClearHint, onAcceptHint, activeHint, coachAnalysis,
   onCloseAnalysis, onShowBestMovePreview, hasPlacements,
   coachEnabled, onToggleCoach
 }: CoachPanelProps) {
@@ -103,6 +104,16 @@ export function CoachPanel({
               {String.fromCharCode(65 + activeHint.placements[0].c)}{activeHint.placements[0].r + 1}
             </span>.
           </p>
+          <div className="flex gap-2 pt-1">
+            <button onClick={onAcceptHint}
+              className="flex-1 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs transition-all active:scale-95 cursor-pointer">
+              Accept
+            </button>
+            <button onClick={onClearHint}
+              className="px-4 py-2 rounded-lg border border-white/10 bg-slate-950/40 hover:bg-slate-950/80 text-xs font-semibold text-slate-300 hover:text-white transition-all active:scale-95 cursor-pointer">
+              Clear
+            </button>
+          </div>
         </div>
       )}
 

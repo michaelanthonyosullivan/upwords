@@ -56,6 +56,12 @@ export default function App() {
     setChallengeResult({ word, success });
   };
 
+  const handleAcceptHint = () => {
+    if (!hint) return;
+    setSelectedTile(null);
+    hint.placements.forEach(p => placeTileTemp(p.r, p.c, p.letter));
+  };
+
   const preview = getPlacementsPreview();
   const winner = gameEnded && winnerId !== null ? players.find(p => p.id === winnerId) : null;
 
@@ -152,7 +158,7 @@ export default function App() {
             />
             <TileBagInfo bag={tileBag} />
             <CoachPanel
-              onGetHint={getHint} onClearHint={clearHint}
+              onGetHint={getHint} onClearHint={clearHint} onAcceptHint={handleAcceptHint}
               activeHint={hint} coachAnalysis={coachAnalysis}
               onCloseAnalysis={closeCoachAndAdvance}
               onShowBestMovePreview={setBestMovePreview}
