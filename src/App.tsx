@@ -18,7 +18,7 @@ export default function App() {
     placements, activeRack, hint, coachAnalysis, lastPlayPlacements,
     coachEnabled, setCoachEnabled,
     startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack,
-    submitPlay, passTurn, exchangeTiles, getHint, clearHint, challengeWord,
+    submitPlay, passTurn, exchangeTiles, getHint, clearHint, challengeWord, removeWord,
     closeCoachAndAdvance, getPlacementsPreview
   } = useUpwords();
 
@@ -160,7 +160,7 @@ export default function App() {
               coachEnabled={coachEnabled}
               onToggleCoach={setCoachEnabled}
             />
-            <MoveLog history={history} players={players} />
+            <MoveLog history={history} players={players} onRemoveWord={removeWord} />
           </div>
         </main>
       )}

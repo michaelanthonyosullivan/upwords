@@ -5,7 +5,7 @@ import {
   BOARD_SIZE
 } from '../lib/upwords-engine';
 import { generateAllLegalMoves, getAiPlay, CandidateMove } from '../lib/upwords-ai';
-import { loadDictionary, challengeWord as challengeWordInDictionary } from '../lib/dictionary';
+import { loadDictionary, challengeWord as challengeWordInDictionary, removeWordFromDictionary } from '../lib/dictionary';
 
 const DEFAULT_AI_NAMES = ['Seamus', 'Clodagh', 'Dervla'];
 
@@ -398,13 +398,20 @@ export function useUpwords() {
     return success;
   };
 
+  /** Flag a bot-played word as too obscure and remove it from this browser's dictionary. */
+  const removeWord = (word: string): boolean => {
+    const success = removeWordFromDictionary(word);
+    if (success) setCustomWordsVersion(v => v + 1);
+    return success;
+  };
+
   return {
     board, players, tileBag, currentTurn, history, gameEnded, winnerId,
     dictLoaded, dictLoadingProgress, gameStarted, isAiThinking,
     placements, activeRack, hint, coachAnalysis, lastPlayPlacements,
     coachEnabled, setCoachEnabled, customWordsVersion,
     startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack,
-    submitPlay, passTurn, exchangeTiles, getHint, clearHint, challengeWord,
+    submitPlay, passTurn, exchangeTiles, getHint, clearHint, challengeWord, removeWord,
     closeCoachAndAdvance, getPlacementsPreview, isFirstMoveOfGame
   };
 }

@@ -36,8 +36,11 @@ let commonWordSet = new Set<string>();
 let fullWordSet = new Set<string>();
 // Words the player has manually "challenged" into the common list this browser
 let customWordSet = new Set<string>();
+// Words the player has flagged as too obscure and removed from this browser's dictionary
+let removedWordSet = new Set<string>();
 
 const CUSTOM_WORDS_STORAGE_KEY = 'upwords_custom_words';
+const REMOVED_WORDS_STORAGE_KEY = 'upwords_removed_words';
 
 function loadCustomWordsFromStorage() {
   try {
@@ -59,6 +62,26 @@ function saveCustomWordsToStorage() {
   }
 }
 
+function loadRemovedWordsFromStorage() {
+  try {
+    const raw = localStorage.getItem(REMOVED_WORDS_STORAGE_KEY);
+    if (raw) {
+      const arr = JSON.parse(raw) as string[];
+      removedWordSet = new Set(arr.map(w => w.toUpperCase()));
+    }
+  } catch {
+    removedWordSet = new Set();
+  }
+}
+
+function saveRemovedWordsToStorage() {
+  try {
+    localStorage.setItem(REMOVED_WORDS_STORAGE_KEY, JSON.stringify([...removedWordSet]));
+  } catch {
+    // localStorage unavailable — removed words just won't persist
+  }
+}
+
 export async function loadDictionary(onProgress?: (progress: number) => void): Promise<Trie> {
   if (dictionaryInstance && isLoaded) return dictionaryInstance;
 
@@ -69,6 +92,7 @@ export async function loadDictionary(onProgress?: (progress: number) => void): P
 
   isLoading = true;
   loadCustomWordsFromStorage();
+  loadRemovedWordsFromStorage();
   try {
     // Load common words (curated everyday English – no proper nouns) in parallel with full dict
     const [dictResponse, commonResponse] = await Promise.all([
@@ -133,6 +157,7 @@ export async function loadDictionary(onProgress?: (progress: number) => void): P
 /** Validates a word for gameplay — uses the curated common-English set plus any challenged words */
 export function isValidWord(word: string): boolean {
   const clean = word.trim().toUpperCase();
+  if (removedWordSet.has(clean)) return false;
   if (customWordSet.has(clean)) return true;
   // Primary: check curated common dictionary
   if (commonWordSet.size > 0) return commonWordSet.has(clean);
@@ -153,15 +178,42 @@ export function isCommonWord(word: string): boolean {
  */
 export function challengeWord(word: string): boolean {
   const clean = word.trim().toUpperCase();
+  if (removedWordSet.has(clean)) removedWordSet.delete(clean); // re-adding overrides an earlier removal
   if (!fullWordSet.has(clean)) return false;
   customWordSet.add(clean);
   commonWordSet.add(clean);
   saveCustomWordsToStorage();
+  saveRemovedWordsToStorage();
   return true;
+}
+
+/**
+ * The reverse direction — flag a word a bot played as too obscure and remove
+ * it from this browser's dictionary going forward. Doesn't undo the bot's
+ * already-scored play; it only prevents that word being played again.
+ * Only works on words that are currently considered valid (no point
+ * "removing" something that was never recognised in the first place).
+ */
+export function removeWordFromDictionary(word: string): boolean {
+  const clean = word.trim().toUpperCase();
+  if (!isValidWord(clean)) return false;
+  removedWordSet.add(clean);
+  customWordSet.delete(clean);
+  saveRemovedWordsToStorage();
+  saveCustomWordsToStorage();
+  return true;
+}
+
+export function isWordRemoved(word: string): boolean {
+  return removedWordSet.has(word.trim().toUpperCase());
 }
 
 export function getCustomWords(): string[] {
   return [...customWordSet].sort();
+}
+
+export function getRemovedWords(): string[] {
+  return [...removedWordSet].sort();
 }
 
 export function getWordSet(): Set<string> { return fullWordSet; }
