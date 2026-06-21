@@ -135,6 +135,10 @@ export default function App() {
         </main>
       )}
 
+      <footer className="shrink-0 py-3 text-center">
+        <p className="text-[10px] italic text-slate-500">©MMXXVI Michael O'Sullivan</p>
+      </footer>
+
       {/* Game-over modal */}
       {gameEnded && winner && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
