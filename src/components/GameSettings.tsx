@@ -29,7 +29,6 @@ export function GameSettings({ onStart, isLoading, dictProgress }: GameSettingsP
           <div className="inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-red-500 to-red-700 shadow-xl shadow-red-600/25 mb-4 ring-1 ring-red-400/30">
             <span className="font-serif-luxury text-3xl font-bold text-white select-none">U</span>
           </div>
-          <h2 className="font-serif-luxury text-3xl font-extrabold text-white mb-2">Upwords by Michael O'Sullivan</h2>
           <p className="text-xs text-slate-400 max-w-xs mx-auto">
             Stack letters, build words, and outplay your opponents.
           </p>

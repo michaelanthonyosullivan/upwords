@@ -54,7 +54,7 @@ export default function App() {
   const winner = gameEnded && winnerId !== null ? players.find(p => p.id === winnerId) : null;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#090c12] text-slate-100">
+    <div className="min-h-screen flex flex-col bg-[#11161f] text-slate-100">
       <Header onRestart={handleRestart} gameStarted={gameStarted} winnerId={winnerId} players={players} />
 
       {!gameStarted ? (
@@ -108,6 +108,7 @@ export default function App() {
               onSubmit={submitPlay}
               onPass={passTurn}
               onExchange={exchangeTiles}
+              onDropTile={handleDropTile}
               bagCount={tileBag.length}
               hasPlacements={placements.length > 0}
             />

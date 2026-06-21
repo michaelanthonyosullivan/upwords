@@ -91,6 +91,8 @@ export function Board({ board, placements, onCellClick, onDropTile, selectedLett
               return (
                 <button
                   key={cellKey}
+                  data-cell-r={r}
+                  data-cell-c={c}
                   onClick={() => onCellClick(r, c)}
                   onDragOver={(e) => {
                     if (displayHeight < MAX_STACK || isTemp) {

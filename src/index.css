@@ -6,34 +6,34 @@
 
 @layer base {
   :root {
-    --background: 222.2 84% 4.9%;
+    --background: 222.2 38% 9%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 5.9%;
+    --card: 222.2 38% 11%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 222.2 38% 9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 350 80% 42%;
+    --primary: 350 80% 46%;
     --primary-foreground: 210 40% 98%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 217.2 28% 21%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 12%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 217.2 28% 16%;
+    --muted-foreground: 215 20.2% 72%;
     --accent: 142.1 76.2% 36.3%;
     --accent-foreground: 355.7 100% 97.3%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 350 80% 42%;
+    --border: 217.2 28% 21%;
+    --input: 217.2 28% 21%;
+    --ring: 350 80% 46%;
     --radius: 0.75rem;
   }
 }
 
 @layer utilities {
   .glass-card {
-    background: rgba(12, 16, 24, 0.55);
+    background: rgba(24, 30, 40, 0.65);
     backdrop-filter: blur(16px);
-    border: 1px solid rgba(255, 255, 255, 0.07);
+    border: 1px solid rgba(255, 255, 255, 0.09);
   }
 
   /* Red Upwords board panel — softened, muted brick tones */
@@ -98,7 +98,7 @@
 body {
   font-family: 'Inter', sans-serif;
   overflow-x: hidden;
-  background-color: #090c12;
+  background-color: #11161f;
   color: #f1f5f9;
 }
 
@@ -161,3 +161,18 @@ h1, h2, h3, .font-serif-luxury {
 ::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.1); }
 ::-webkit-scrollbar-thumb { background: rgba(220, 38, 50, 0.3); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: rgba(220, 38, 50, 0.55); }
+
+/* ── Mobile legibility pass ─────────────────────────────────────────────
+   Many labels/badges across the app use Tailwind arbitrary-value text
+   sizes (text-[9px], text-[10px], etc.) tuned for desktop. On phones
+   these read as genuinely too small. Bumping them here, scoped to one
+   breakpoint, fixes it everywhere at once instead of editing every
+   component file individually. */
+@media (max-width: 640px) {
+  .text-\[7px\]  { font-size: 9px !important; }
+  .text-\[8px\]  { font-size: 10px !important; }
+  .text-\[9px\]  { font-size: 11px !important; }
+  .text-\[10px\] { font-size: 12.5px !important; }
+  .text-\[11px\] { font-size: 13px !important; }
+  .text-xs      { font-size: 13px !important; line-height: 1.4 !important; }
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Shuffle, ArrowDownToLine, RefreshCw, Send, AlertTriangle } from 'lucide-react';
 
 interface RackProps {
@@ -11,18 +11,107 @@ interface RackProps {
   onSubmit: () => { success: boolean; error?: string };
   onPass: () => void;
   onExchange: (tiles: string[]) => { success: boolean; error?: string } | void;
+  onDropTile: (r: number, c: number, letter: string) => void;
   bagCount: number;
   hasPlacements: boolean;
 }
 
 export function Rack({
   rack, selectedTileIdx, onSelectTile, onDeselectTile,
-  onShuffle, onRecall, onSubmit, onPass, onExchange, bagCount, hasPlacements
+  onShuffle, onRecall, onSubmit, onPass, onExchange, onDropTile, bagCount, hasPlacements
 }: RackProps) {
   const [exchangeMode, setExchangeMode] = useState(false);
   // Exchange selections stored as Set of rack indices
   const [exchangeIdxs, setExchangeIdxs] = useState<Set<number>>(new Set());
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // ── Touch-based drag (native HTML5 drag-and-drop never fires on touchscreens) ──
+  // Implemented with native (not React synthetic) listeners so preventDefault()
+  // actually works — React/the browser may attach touchstart/touchmove as passive
+  // by default, which silently ignores preventDefault() and lets the page scroll
+  // instead of dragging, and also lets a "ghost" click fire right after the drop.
+  const tilesContainerRef = useRef<HTMLDivElement>(null);
+  const rackRef = useRef(rack);
+  const exchangeModeRef = useRef(exchangeMode);
+  const [touchGhost, setTouchGhost] = useState<{ letter: string; x: number; y: number } | null>(null);
+  const DRAG_THRESHOLD = 10; // px of finger movement before a tap becomes a drag
+
+  useEffect(() => { rackRef.current = rack; }, [rack]);
+  useEffect(() => { exchangeModeRef.current = exchangeMode; }, [exchangeMode]);
+
+  useEffect(() => {
+    const container = tilesContainerRef.current;
+    if (!container) return;
+
+    let state: { x: number; y: number; idx: number; letter: string; dragging: boolean } | null = null;
+    let hoverCell: HTMLElement | null = null;
+
+    const onTouchStart = (e: TouchEvent) => {
+      if (exchangeModeRef.current) return;
+      const targetEl = (e.target as HTMLElement).closest('[data-tile-idx]') as HTMLElement | null;
+      if (!targetEl) return;
+      const idx = parseInt(targetEl.getAttribute('data-tile-idx') || '', 10);
+      if (isNaN(idx)) return;
+      const t = e.touches[0];
+      state = { x: t.clientX, y: t.clientY, idx, letter: rackRef.current[idx], dragging: false };
+    };
+
+    const onTouchMove = (e: TouchEvent) => {
+      if (!state) return;
+      const t = e.touches[0];
+      const dx = t.clientX - state.x;
+      const dy = t.clientY - state.y;
+      if (!state.dragging && Math.sqrt(dx * dx + dy * dy) > DRAG_THRESHOLD) {
+        state.dragging = true;
+      }
+      if (state.dragging) {
+        if (e.cancelable) e.preventDefault(); // stop page scroll now that we're dragging
+        setTouchGhost({ letter: state.letter, x: t.clientX, y: t.clientY });
+        const el = document.elementFromPoint(t.clientX, t.clientY) as HTMLElement | null;
+        const cellEl = el?.closest('[data-cell-r]') as HTMLElement | null;
+        if (cellEl !== hoverCell) {
+          hoverCell?.classList.remove('drag-over');
+          cellEl?.classList.add('drag-over');
+          hoverCell = cellEl;
+        }
+      }
+    };
+
+    const endDrag = (e: TouchEvent, commit: boolean) => {
+      if (state?.dragging) {
+        if (e.cancelable) e.preventDefault(); // suppress the synthetic click that would otherwise re-fire select
+        if (commit) {
+          const touch = e.changedTouches[0];
+          const el = document.elementFromPoint(touch.clientX, touch.clientY) as HTMLElement | null;
+          const cellEl = el?.closest('[data-cell-r]') as HTMLElement | null;
+          if (cellEl) {
+            const r = parseInt(cellEl.getAttribute('data-cell-r') || '', 10);
+            const c = parseInt(cellEl.getAttribute('data-cell-c') || '', 10);
+            if (!isNaN(r) && !isNaN(c)) onDropTile(r, c, state.letter);
+          }
+        }
+      }
+      hoverCell?.classList.remove('drag-over');
+      hoverCell = null;
+      state = null;
+      setTouchGhost(null);
+    };
+
+    const onTouchEnd = (e: TouchEvent) => endDrag(e, true);
+    const onTouchCancel = (e: TouchEvent) => endDrag(e, false);
+
+    container.addEventListener('touchstart', onTouchStart, { passive: true });
+    container.addEventListener('touchmove', onTouchMove, { passive: false });
+    container.addEventListener('touchend', onTouchEnd, { passive: false });
+    container.addEventListener('touchcancel', onTouchCancel, { passive: false });
+
+    return () => {
+      container.removeEventListener('touchstart', onTouchStart);
+      container.removeEventListener('touchmove', onTouchMove);
+      container.removeEventListener('touchend', onTouchEnd);
+      container.removeEventListener('touchcancel', onTouchCancel);
+    };
+  }, [onDropTile]);
 
   const handleTileClick = (letter: string, idx: number) => {
     setErrorMsg(null);
@@ -84,7 +173,7 @@ export function Rack({
       </div>
 
       {/* Tiles */}
-      <div className="flex gap-2 p-3 bg-slate-950/80 w-full justify-center rounded-xl border border-white/5 min-h-[72px]">
+      <div ref={tilesContainerRef} className="flex gap-2 p-3 bg-slate-950/80 w-full justify-center rounded-xl border border-white/5 min-h-[72px]">
         {rack.map((letter, idx) => {
           const isSelected = !exchangeMode && selectedTileIdx === idx;
           const isForExchange = exchangeMode && exchangeIdxs.has(idx);
@@ -99,16 +188,19 @@ export function Rack({
           return (
             <button
               key={idx}
+              data-tile-idx={idx}
               onClick={() => handleTileClick(letter, idx)}
               draggable={!exchangeMode}
               onDragStart={(e) => {
-                // Store letter as plain text for the drop handler
+                // Store letter as plain text for the drop handler (desktop mouse drag only —
+                // touch drag is handled separately above via native listeners)
                 e.dataTransfer.setData('text/plain', letter);
                 e.dataTransfer.effectAllowed = 'move';
                 onSelectTile(letter, idx);
               }}
               onDragEnd={() => onDeselectTile()}
-              className={`h-11 w-11 rounded-lg border-2 font-bold font-serif-luxury text-lg transition-all duration-200 active:scale-95 cursor-pointer flex items-center justify-center select-none ${cls}`}
+              style={{ touchAction: exchangeMode ? 'auto' : 'none' }}
+              className={`h-12 w-12 sm:h-11 sm:w-11 rounded-lg border-2 font-bold font-serif-luxury text-xl sm:text-lg transition-all duration-200 active:scale-95 cursor-pointer flex items-center justify-center select-none ${cls}`}
             >
               {letter}
             </button>
@@ -167,6 +259,16 @@ export function Rack({
           )}
         </div>
       </div>
+
+      {/* Floating tile that follows the finger during a touch drag */}
+      {touchGhost && (
+        <div
+          style={{ position: 'fixed', left: touchGhost.x - 26, top: touchGhost.y - 60, zIndex: 9999, pointerEvents: 'none' }}
+          className="h-12 w-12 rounded-lg border-2 border-sky-400 bg-gradient-to-b from-sky-100 to-sky-200 text-sky-900 font-bold font-serif-luxury text-xl flex items-center justify-center shadow-2xl scale-110"
+        >
+          {touchGhost.letter}
+        </div>
+      )}
     </div>
   );
 }

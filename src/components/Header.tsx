@@ -12,7 +12,7 @@ export function Header({ onRestart, gameStarted }: HeaderProps) {
   const [showRules, setShowRules] = useState(false);
 
   return (
-    <header className="shrink-0 border-b border-white/5 bg-[#090c12]/90 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10">
+    <header className="shrink-0 border-b border-white/5 bg-[#11161f]/90 backdrop-blur-md px-6 py-4 flex items-center justify-between z-10">
       <div className="flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-red-500 to-red-700 flex items-center justify-center shadow-lg shadow-red-600/25 ring-1 ring-red-400/30">
           <span className="font-serif-luxury text-xl font-bold text-white select-none">U</span>
@@ -20,20 +20,20 @@ export function Header({ onRestart, gameStarted }: HeaderProps) {
         <div>
           <div className="text-[9px] uppercase tracking-[0.3em] text-red-500/80 font-semibold leading-none">Word Stacking Game</div>
           <h1 className="font-serif-luxury text-xl md:text-2xl font-bold leading-tight bg-gradient-to-r from-red-300 via-red-400 to-red-300 bg-clip-text text-transparent">
-            Upwords by Michael O'Sullivan
+            Upwords
           </h1>
         </div>
       </div>
 
       <div className="flex items-center gap-3">
         <button onClick={() => setShowRules(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs text-slate-300 hover:text-white hover:bg-white/10 transition-all font-medium">
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-white/10 bg-white/5 text-xs text-slate-300 hover:text-white hover:bg-white/10 transition-all font-medium whitespace-nowrap shrink-0">
           <BookOpen className="h-3.5 w-3.5" />
           <span>Rules</span>
         </button>
         {gameStarted && (
           <button onClick={onRestart}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-lg shadow-red-600/15 active:scale-95 transition-all">
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-lg shadow-red-600/15 active:scale-95 transition-all whitespace-nowrap shrink-0">
             <RefreshCw className="h-3.5 w-3.5" />
             <span>New Game</span>
           </button>
