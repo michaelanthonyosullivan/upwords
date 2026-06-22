@@ -68,18 +68,18 @@ export function Scoreboard({ players, currentTurn, isAiThinking, winnerId, gameE
                       </span>
                     )}
                     {player.isAi && !isEditing && (
-                      <>
-                        <span className="text-[8px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-white/5 shrink-0">
-                          {player.aiLevel}
-                        </span>
-                        <button
-                          onClick={() => startEditing(player)}
-                          title="Rename opponent"
-                          className="text-slate-600 hover:text-red-400 transition-colors shrink-0 cursor-pointer"
-                        >
-                          <Pencil className="h-3 w-3" />
-                        </button>
-                      </>
+                      <span className="text-[8px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 border border-white/5 shrink-0">
+                        {player.aiLevel}
+                      </span>
+                    )}
+                    {!isEditing && (
+                      <button
+                        onClick={() => startEditing(player)}
+                        title="Rename player"
+                        className="text-slate-600 hover:text-red-400 transition-colors shrink-0 cursor-pointer"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
                     )}
                     {isEditing && (
                       <button onClick={commitEdit} className="text-emerald-400 hover:text-emerald-300 shrink-0 cursor-pointer">
