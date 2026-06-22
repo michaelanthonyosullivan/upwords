@@ -59,7 +59,13 @@ export default function App() {
   const handleAcceptHint = () => {
     if (!hint) return;
     setSelectedTile(null);
-    hint.placements.forEach(p => placeTileTemp(p.r, p.c, p.letter));
+    const res = submitPlay(hint.placements);
+    if (!res.success) {
+      // Defensive fallback — board state changed since the hint was generated
+      // and it's no longer valid. Just place the tiles so the player can see
+      // why and adjust, rather than silently failing.
+      hint.placements.forEach(p => placeTileTemp(p.r, p.c, p.letter));
+    }
   };
 
   const preview = getPlacementsPreview();

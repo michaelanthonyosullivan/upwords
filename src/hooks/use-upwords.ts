@@ -149,25 +149,37 @@ export function useUpwords() {
   };
 
   // ── Submit Human Play ──────────────────────────────────────────────────────
-  const submitPlay = () => {
-    if (placements.length === 0) return { success: false, error: 'No tiles placed.' };
+  // Accepts an optional placementsOverride so a hint can be placed and
+  // submitted in one atomic call (avoids relying on placeTileTemp's state
+  // updates having applied yet, which they won't have within the same tick).
+  const submitPlay = (placementsOverride?: PlayPlacement[]) => {
+    const activePlacements = placementsOverride ?? placements;
+    if (activePlacements.length === 0) return { success: false, error: 'No tiles placed.' };
     const player = players[currentTurn];
     if (!player || player.isAi) return { success: false, error: 'Not your turn.' };
 
     const isFirst = isFirstMoveOfGame();
-    const result = validatePlay(board, placements, isFirst, player.rack);
+    const result = validatePlay(board, activePlacements, isFirst, player.rack);
     if (!result.isValid || !result.wordsFormed || result.score === undefined)
       return { success: false, error: result.error || 'Invalid move.' };
 
     const nextBoard = copyBoard(board);
-    for (const p of placements) nextBoard[p.r][p.c].push({ letter: p.letter, placedBy: player.id });
+    for (const p of activePlacements) nextBoard[p.r][p.c].push({ letter: p.letter, placedBy: player.id });
 
     const nextBag = [...tileBag];
     const drawn: string[] = [];
-    for (let i = 0; i < placements.length; i++) {
+    for (let i = 0; i < activePlacements.length; i++) {
       if (nextBag.length > 0) drawn.push(nextBag.shift()!);
     }
-    const nextRack = [...activeRack, ...drawn];
+    // Compute the post-play rack from the authoritative player.rack (not the
+    // displayed activeRack) so this is correct whether the placed tiles were
+    // ever reflected in activeRack or not.
+    let tempRack = [...player.rack];
+    for (const p of activePlacements) {
+      const idx = tempRack.indexOf(p.letter);
+      if (idx !== -1) tempRack.splice(idx, 1);
+    }
+    const nextRack = [...tempRack, ...drawn];
 
     const updatedPlayers = players.map(p =>
       p.id === player.id ? { ...p, score: p.score + result.score!, rack: nextRack } : p
@@ -181,7 +193,7 @@ export function useUpwords() {
       allWords,
       score: result.score!,
       type: 'play',
-      placedTiles: placements.map(p => ({ r: p.r, c: p.c, letter: p.letter, prevHeight: getBoardStackHeight(board, p.r, p.c) })),
+      placedTiles: activePlacements.map(p => ({ r: p.r, c: p.c, letter: p.letter, prevHeight: getBoardStackHeight(board, p.r, p.c) })),
       turnIndex: history.length
     };
 
@@ -190,14 +202,14 @@ export function useUpwords() {
     setTileBag(nextBag);
     setHistory(prev => [...prev, historyItem]);
     setConsecutivePasses(0);
-    setLastPlayPlacements(placements.map(p => ({ r: p.r, c: p.c })));
+    setLastPlayPlacements(activePlacements.map(p => ({ r: p.r, c: p.c })));
     setPlacements([]);
     setActiveRack(nextRack);
     setHint(null);
 
     if (coachEnabled) {
       setCoachAnalysis({
-        userPlay: { placements, score: result.score!, word: allWords[0] || '' },
+        userPlay: { placements: activePlacements, score: result.score!, word: allWords[0] || '' },
         bestPlay: bestMoveRef.current
       });
     } else {
