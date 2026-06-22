@@ -80,17 +80,20 @@ export function GameSettings({ onStart, isLoading, dictProgress }: GameSettingsP
           <div>
             <label className="block text-xs uppercase tracking-wider text-slate-400 font-semibold mb-2 flex items-center gap-1.5">
               <Cpu className="h-3.5 w-3.5 text-red-500" />
-              <span>AI Opponents</span>
+              <span>No of AI Opponents</span>
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="space-y-2">
               {([1, 2, 3] as const).map((n) => (
                 <button key={n} type="button" onClick={() => setNumAi(n)}
-                  className={`py-3 rounded-xl border text-xs font-bold transition-all active:scale-95 ${
+                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border text-xs font-bold transition-all active:scale-95 ${
                     numAi === n
                       ? 'bg-red-600/20 border-red-500 text-red-400 shadow-sm'
                       : 'bg-slate-900/50 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-slate-900'
                   }`}>
-                  {n} {n === 1 ? 'Bot' : 'Bots'}
+                  <span>{n}</span>
+                  {numAi === n
+                    ? <CheckSquare className="h-4 w-4 shrink-0" />
+                    : <Square className="h-4 w-4 shrink-0 opacity-50" />}
                 </button>
               ))}
             </div>

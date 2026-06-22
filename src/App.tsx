@@ -17,7 +17,7 @@ export default function App() {
     dictLoaded, dictLoadingProgress, gameStarted, isAiThinking,
     placements, activeRack, hint, coachAnalysis, lastPlayPlacements,
     coachEnabled, setCoachEnabled,
-    startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack,
+    startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack, renamePlayer,
     submitPlay, passTurn, exchangeTiles, getHint, clearHint, challengeWord, removeWord,
     closeCoachAndAdvance, getPlacementsPreview
   } = useUpwords();
@@ -161,6 +161,7 @@ export default function App() {
             <Scoreboard
               players={players} currentTurn={currentTurn}
               isAiThinking={isAiThinking} winnerId={winnerId} gameEnded={gameEnded}
+              onRenamePlayer={renamePlayer}
             />
             <TileBagInfo bag={tileBag} />
             <CoachPanel

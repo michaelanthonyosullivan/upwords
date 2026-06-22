@@ -148,6 +148,12 @@ export function useUpwords() {
     });
   };
 
+  const renamePlayer = (playerId: number, newName: string) => {
+    const trimmed = newName.trim().slice(0, 15);
+    if (!trimmed) return;
+    setPlayers(prev => prev.map(p => p.id === playerId ? { ...p, name: trimmed } : p));
+  };
+
   // ── Submit Human Play ──────────────────────────────────────────────────────
   // Accepts an optional placementsOverride so a hint can be placed and
   // submitted in one atomic call (avoids relying on placeTileTemp's state
@@ -422,7 +428,7 @@ export function useUpwords() {
     dictLoaded, dictLoadingProgress, gameStarted, isAiThinking,
     placements, activeRack, hint, coachAnalysis, lastPlayPlacements,
     coachEnabled, setCoachEnabled, customWordsVersion,
-    startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack,
+    startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack, renamePlayer,
     submitPlay, passTurn, exchangeTiles, getHint, clearHint, challengeWord, removeWord,
     closeCoachAndAdvance, getPlacementsPreview, isFirstMoveOfGame
   };

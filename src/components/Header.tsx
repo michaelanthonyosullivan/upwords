@@ -80,6 +80,26 @@ export function Header({ onRestart, gameStarted }: HeaderProps) {
                   <li>At game end: −1 pt per remaining tile in hand.</li>
                 </ul>
               </div>
+              <div>
+                <h3 className="text-white font-bold mb-1">Improving the Dictionary</h3>
+                <p className="mb-1.5">
+                  The built-in dictionary sticks to everyday words, so it will sometimes reject a real word it
+                  hasn't heard of — or let an opponent get away with something too obscure. You can fix both,
+                  and the fix is remembered on this device for future games.
+                </p>
+                <ul className="list-disc pl-5 space-y-1">
+                  <li>
+                    <strong>Word rejected that should be valid?</strong> Place your tiles as normal. If it's
+                    turned down, a <span className="text-red-300 font-semibold">Challenge</span> button appears
+                    next to the error — tap it to add the word permanently, then submit your play.
+                  </li>
+                  <li>
+                    <strong>An opponent plays something too obscure?</strong> Find the word in the Game History
+                    list and tap the small shield icon beside it to remove that word from the dictionary. Their
+                    score for that turn still stands — it only stops the word being played again.
+                  </li>
+                </ul>
+              </div>
               <div className="flex justify-end pt-4 border-t border-white/10">
                 <button onClick={() => setShowRules(false)}
                   className="px-5 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-xl active:scale-95 transition-all text-xs">
