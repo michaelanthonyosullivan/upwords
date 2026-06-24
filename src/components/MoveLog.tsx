@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { ScrollText, Play, RefreshCw, XCircle, ShieldX } from 'lucide-react';
+import { ScrollText, Play, RefreshCw, XCircle, ShieldX, History } from 'lucide-react';
 import { PlayHistoryItem } from '../lib/upwords-engine';
 import { isWordRemoved } from '../lib/dictionary';
 
@@ -7,9 +7,11 @@ interface MoveLogProps {
   history: PlayHistoryItem[];
   players: any[];
   onRemoveWord: (word: string) => boolean;
+  onRewind: (turnIndex: number) => void;
+  canRewindTo: (turnIndex: number) => boolean;
 }
 
-export function MoveLog({ history, players, onRemoveWord }: MoveLogProps) {
+export function MoveLog({ history, players, onRemoveWord, onRewind, canRewindTo }: MoveLogProps) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -90,11 +92,22 @@ export function MoveLog({ history, players, onRemoveWord }: MoveLogProps) {
                     </div>
                   )}
                 </div>
-                {item.type === 'play' && (
-                  <div className="font-mono font-bold text-slate-100 shrink-0">
-                    +{item.score} <span className="text-[9px] text-slate-500 font-sans uppercase">pts</span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 shrink-0">
+                  {item.type === 'play' && (
+                    <div className="font-mono font-bold text-slate-100">
+                      +{item.score} <span className="text-[9px] text-slate-500 font-sans uppercase">pts</span>
+                    </div>
+                  )}
+                  {canRewindTo(item.turnIndex) && (
+                    <button
+                      onClick={() => onRewind(item.turnIndex)}
+                      title="Rewind to before this move"
+                      className="text-slate-600 hover:text-amber-400 transition-colors active:scale-90 cursor-pointer"
+                    >
+                      <History className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               </div>
             );
           })

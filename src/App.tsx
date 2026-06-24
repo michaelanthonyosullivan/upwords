@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useUpwords } from './hooks/use-upwords';
 import { Header } from './components/Header';
 import { GameSettings } from './components/GameSettings';
@@ -17,8 +17,9 @@ export default function App() {
     dictLoaded, dictLoadingProgress, gameStarted, isAiThinking,
     placements, activeRack, hint, coachAnalysis, lastPlayPlacements,
     coachEnabled, setCoachEnabled,
-    startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack, renamePlayer,
-    submitPlay, passTurn, exchangeTiles, getHint, clearHint, challengeWord, removeWord,
+    startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack, renamePlayer, reorderRack,
+    submitPlay, passTurn, exchangeTiles, getHint, clearHint, challengeWord, removeWord, humanMovesReady,
+    turnSnapshots, rewindToTurn,
     closeCoachAndAdvance, getPlacementsPreview
   } = useUpwords();
 
@@ -26,6 +27,11 @@ export default function App() {
   const [selectedTile, setSelectedTile] = useState<{ letter: string; idx: number } | null>(null);
   const [bestMovePreview, setBestMovePreview] = useState<CandidateMove | null>(null);
   const [challengeResult, setChallengeResult] = useState<{ word: string; success: boolean } | null>(null);
+  const [noHintAvailable, setNoHintAvailable] = useState(false);
+
+  useEffect(() => {
+    setNoHintAvailable(false);
+  }, [currentTurn]);
 
   const handleCellClick = (r: number, c: number) => {
     if (players[currentTurn]?.isAi || gameEnded) return;
@@ -68,8 +74,16 @@ export default function App() {
     }
   };
 
+  const handleRewind = (turnIndex: number) => {
+    if (window.confirm('Rewind to before this move? Everything that happened after it will be undone.')) {
+      setSelectedTile(null);
+      rewindToTurn(turnIndex);
+    }
+  };
+
   const preview = getPlacementsPreview();
   const winner = gameEnded && winnerId !== null ? players.find(p => p.id === winnerId) : null;
+  const finalMove = gameEnded ? [...history].reverse().find(h => h.type === 'play') : undefined;
 
   return (
     <div className="min-h-screen flex flex-col bg-[#11161f] text-slate-100">
@@ -151,6 +165,7 @@ export default function App() {
               onPass={passTurn}
               onExchange={exchangeTiles}
               onDropTile={handleDropTile}
+              onReorder={reorderRack}
               bagCount={tileBag.length}
               hasPlacements={placements.length > 0}
             />
@@ -165,15 +180,19 @@ export default function App() {
             />
             <TileBagInfo bag={tileBag} />
             <CoachPanel
-              onGetHint={getHint} onClearHint={clearHint} onAcceptHint={handleAcceptHint}
+              onGetHint={() => setNoHintAvailable(!getHint())} onClearHint={clearHint} onAcceptHint={handleAcceptHint}
               activeHint={hint} coachAnalysis={coachAnalysis}
               onCloseAnalysis={closeCoachAndAdvance}
               onShowBestMovePreview={setBestMovePreview}
               hasPlacements={placements.length > 0}
               coachEnabled={coachEnabled}
               onToggleCoach={setCoachEnabled}
+              isAiTurn={!!players[currentTurn]?.isAi}
+              humanMovesReady={humanMovesReady}
+              noHintAvailable={noHintAvailable}
             />
-            <MoveLog history={history} players={players} onRemoveWord={removeWord} />
+            <MoveLog history={history} players={players} onRemoveWord={removeWord}
+              onRewind={handleRewind} canRewindTo={(idx) => idx < turnSnapshots.length} />
           </div>
         </main>
       )}
@@ -190,7 +209,19 @@ export default function App() {
               <Trophy className="h-10 w-10" />
             </div>
             <h2 className="font-serif-luxury text-3xl font-bold text-white mb-2">Game Over!</h2>
-            <p className="text-xs text-slate-400 mb-6">Final scores (rack penalties applied)</p>
+            <p className="text-xs text-slate-400 mb-4">Final scores (rack penalties applied)</p>
+            {finalMove && (
+              <div className="mb-6 p-3 rounded-xl bg-red-500/5 border border-red-500/15">
+                <p className="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-1">Final Play</p>
+                <p className="text-xs text-slate-300">
+                  <span className="font-bold text-slate-100">{finalMove.playerName}</span> played{' '}
+                  <span className="font-serif-luxury font-bold text-red-300 text-sm">
+                    {finalMove.allWords?.join(' + ') || finalMove.word}
+                  </span>{' '}
+                  for <span className="font-mono font-bold text-white">{finalMove.score} pts</span>
+                </p>
+              </div>
+            )}
             <div className="space-y-3 mb-8">
               {[...players].sort((a, b) => b.score - a.score).map((player, idx) => (
                 <div key={player.id} className={`flex items-center justify-between p-3.5 rounded-xl border ${

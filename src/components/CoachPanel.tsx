@@ -17,12 +17,15 @@ interface CoachPanelProps {
   hasPlacements: boolean;
   coachEnabled: boolean;
   onToggleCoach: (enabled: boolean) => void;
+  isAiTurn: boolean;
+  humanMovesReady: boolean;
+  noHintAvailable: boolean;
 }
 
 export function CoachPanel({
   onGetHint, onClearHint, onAcceptHint, activeHint, coachAnalysis,
   onCloseAnalysis, onShowBestMovePreview, hasPlacements,
-  coachEnabled, onToggleCoach
+  coachEnabled, onToggleCoach, isAiTurn, humanMovesReady, noHintAvailable
 }: CoachPanelProps) {
   const [showingPreview, setShowingPreview] = useState(false);
 
@@ -56,13 +59,21 @@ export function CoachPanel({
                 Clear
               </button>
             ) : (
-              <button onClick={onGetHint} disabled={hasPlacements}
+              <button onClick={onGetHint} disabled={hasPlacements || isAiTurn || !humanMovesReady}
                 className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg active:scale-95 transition-all text-xs disabled:opacity-40 disabled:pointer-events-none flex items-center gap-1 cursor-pointer">
                 <Sparkles className="h-3.5 w-3.5 fill-current" />
-                <span>Hint</span>
+                <span>{isAiTurn ? 'Opponent\'s Turn' : 'Hint'}</span>
               </button>
             )}
           </div>
+
+          {!activeHint && noHintAvailable && !isAiTurn && (
+            <div className="px-4 pb-3 -mt-1">
+              <p className="text-[10px] text-amber-400/90 italic">
+                No suggested play available for your current rack — try exchanging tiles or passing.
+              </p>
+            </div>
+          )}
 
           <div className="flex items-center justify-between px-4 py-3 border-t border-white/5">
             <div>

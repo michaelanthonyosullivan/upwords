@@ -9,6 +9,16 @@ import { loadDictionary, challengeWord as challengeWordInDictionary, removeWordF
 
 const DEFAULT_AI_NAMES = ['Seamus', 'Clodagh', 'Dervla'];
 
+interface GameSnapshot {
+  board: Board;
+  players: Player[];
+  tileBag: string[];
+  currentTurn: number;
+  consecutivePasses: number;
+  history: PlayHistoryItem[];
+  lastPlayPlacements: { r: number; c: number }[];
+}
+
 export function useUpwords() {
   const [board, setBoard] = useState<Board>(createEmptyBoard());
   const [players, setPlayers] = useState<Player[]>([]);
@@ -40,6 +50,7 @@ export function useUpwords() {
   const bestMoveRef = useRef<CandidateMove | null>(null);
   const allMovesRef = useRef<CandidateMove[]>([]);
   const [coachEnabled, setCoachEnabled] = useState<boolean>(true);
+  const [humanMovesReady, setHumanMovesReady] = useState<boolean>(false);
 
   useEffect(() => {
     loadDictionary((p) => {
@@ -58,15 +69,61 @@ export function useUpwords() {
   const calculateHumanMoves = useCallback(() => {
     if (!gameStarted || gameEnded) return;
     const active = players[currentTurn];
-    if (!active || active.isAi) { bestMoveRef.current = null; allMovesRef.current = []; return; }
+    if (!active || active.isAi) { bestMoveRef.current = null; allMovesRef.current = []; setHumanMovesReady(false); return; }
+    setHumanMovesReady(false);
     setTimeout(() => {
       const moves = generateAllLegalMoves(board, active.rack, isFirstMoveOfGame());
       allMovesRef.current = moves;
       bestMoveRef.current = moves[0] || null;
+      setHumanMovesReady(true);
     }, 100);
   }, [board, players, currentTurn, gameStarted, gameEnded, isFirstMoveOfGame]);
 
   useEffect(() => { calculateHumanMoves(); }, [currentTurn, gameStarted, calculateHumanMoves]);
+
+  // ── Rewind system ────────────────────────────────────────────────────────
+  // Captures a full snapshot of game state at the start of every turn, so the
+  // player can rewind to "before history[i] happened" by restoring
+  // turnSnapshots[i] — letting them replay a turn differently or undo a
+  // mistake, theirs or an opponent's.
+  const [turnSnapshots, setTurnSnapshots] = useState<GameSnapshot[]>([]);
+  const prevSnapshotTurnRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!gameStarted) return;
+    if (prevSnapshotTurnRef.current === currentTurn) return;
+    prevSnapshotTurnRef.current = currentTurn;
+    setTurnSnapshots(prev => [...prev, {
+      board: copyBoard(board),
+      players: players.map(p => ({ ...p, rack: [...p.rack] })),
+      tileBag: [...tileBag],
+      currentTurn,
+      consecutivePasses,
+      history: [...history],
+      lastPlayPlacements: [...lastPlayPlacements]
+    }]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTurn, gameStarted]);
+
+  const rewindToTurn = (turnIndex: number) => {
+    const snap = turnSnapshots[turnIndex];
+    if (!snap) return;
+    setBoard(copyBoard(snap.board));
+    setPlayers(snap.players.map(p => ({ ...p, rack: [...p.rack] })));
+    setTileBag([...snap.tileBag]);
+    setCurrentTurn(snap.currentTurn);
+    setConsecutivePasses(snap.consecutivePasses);
+    setHistory([...snap.history]);
+    setLastPlayPlacements([...snap.lastPlayPlacements]);
+    setTurnSnapshots(prev => prev.slice(0, turnIndex + 1));
+    prevSnapshotTurnRef.current = snap.currentTurn;
+    setPlacements([]);
+    setActiveRack([...snap.players[snap.currentTurn].rack]);
+    setHint(null);
+    setCoachAnalysis(null);
+    setGameEnded(false);
+    setWinnerId(null);
+  };
 
   // ── Start New Game ─────────────────────────────────────────────────────────
   const startNewGame = (
@@ -98,6 +155,8 @@ export function useUpwords() {
     setLastPlayPlacements([]);
     setActiveRack(newPlayers[0].rack);
     setGameStarted(true);
+    setTurnSnapshots([]);
+    prevSnapshotTurnRef.current = null;
     bestMoveRef.current = null;
     allMovesRef.current = [];
   };
@@ -152,6 +211,17 @@ export function useUpwords() {
     const trimmed = newName.trim().slice(0, 15);
     if (!trimmed) return;
     setPlayers(prev => prev.map(p => p.id === playerId ? { ...p, name: trimmed } : p));
+  };
+
+  /** Move a rack tile from one position to another, for visually composing words before placing them. */
+  const reorderRack = (fromIdx: number, toIdx: number) => {
+    setActiveRack(rack => {
+      if (fromIdx < 0 || fromIdx >= rack.length || toIdx < 0 || toIdx >= rack.length || fromIdx === toIdx) return rack;
+      const n = [...rack];
+      const [moved] = n.splice(fromIdx, 1);
+      n.splice(toIdx, 0, moved);
+      return n;
+    });
   };
 
   // ── Submit Human Play ──────────────────────────────────────────────────────
@@ -392,9 +462,10 @@ export function useUpwords() {
     setWinnerId(winId);
   };
 
-  const getHint = () => {
-    if (players[currentTurn]?.isAi || gameEnded) return;
-    if (bestMoveRef.current) setHint(bestMoveRef.current);
+  const getHint = (): boolean => {
+    if (players[currentTurn]?.isAi || gameEnded) return false;
+    if (bestMoveRef.current) { setHint(bestMoveRef.current); return true; }
+    return false;
   };
 
   const clearHint = () => setHint(null);
@@ -427,8 +498,8 @@ export function useUpwords() {
     board, players, tileBag, currentTurn, history, gameEnded, winnerId,
     dictLoaded, dictLoadingProgress, gameStarted, isAiThinking,
     placements, activeRack, hint, coachAnalysis, lastPlayPlacements,
-    coachEnabled, setCoachEnabled, customWordsVersion,
-    startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack, renamePlayer,
+    coachEnabled, setCoachEnabled, customWordsVersion, humanMovesReady, turnSnapshots, rewindToTurn,
+    startNewGame, placeTileTemp, removeTileTemp, recallTiles, shuffleRack, renamePlayer, reorderRack,
     submitPlay, passTurn, exchangeTiles, getHint, clearHint, challengeWord, removeWord,
     closeCoachAndAdvance, getPlacementsPreview, isFirstMoveOfGame
   };
